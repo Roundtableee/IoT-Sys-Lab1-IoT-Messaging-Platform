@@ -2,11 +2,13 @@ const mqtt = require('mqtt')
 
 // Load the configuration
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env') }); // Sensor/server/.env
 
 const Producer = () => {
     let client
-    const BROKER = 'mqtt://localhost:1883';
+    let BROKER = (process.env.MQTT_BROKER || 'mqtt://localhost:1883').trim().replace(/^["']|["']$/g, '');
+    if (!/^[a-z]+:\/\//i.test(BROKER)) BROKER = 'mqtt://' + BROKER;
+    console.log('Producer using broker:', BROKER);
     const options = {
         connectTimeout: 5000,
         clientId: 'nodejs_client_' + Math.random().toString(16).slice(3),

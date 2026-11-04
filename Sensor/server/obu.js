@@ -1,8 +1,20 @@
 const { chula_route } = require('./static/chula_route.js');
+const Producer = require('./mqtt/producer.js');
 
-// ================ Import necessary libraries ================
+// Your v2x_topic from Part 1 (set V2X_TOPIC in your environment, or replace the fallback)
+const V2X_TOPIC = process.env.V2X_TOPIC || '<your_v2x_topic>';
 
-// ============================================================
+const producer = Producer();
+const ready = producer.connect().catch((err) => console.error('Producer connect failed:', err));
+
+async function publishJSON(subtopic, payload) {
+	try {
+		await ready;
+		await producer.publish(`${V2X_TOPIC}/${subtopic}`, JSON.stringify(payload));
+	} catch (err) {
+		console.error(`Failed to publish ${subtopic}:`, err.message);
+	}
+}
 
 let route_counter = 0;
 let location_route = null;
@@ -17,6 +29,7 @@ process.on('message', async (message) => {
 		// you should send a payload containing the value to the "<topic>/speed" topic
 
 		// =================== Add your code below ========================
+		await publishJSON('speed', { speed: Number(value) });
 
 		// ================================================================
 
@@ -26,6 +39,8 @@ process.on('message', async (message) => {
 		// you should send a payload containing the value to the "<topic>/heartbeat" topic
 
 		// =================== Add your code below ========================
+		activeStatus = value === 'ACTIVE';
+		await publishJSON('heartbeat', { heartbeat: activeStatus });
 
 		// ================================================================
 
@@ -65,6 +80,7 @@ function change_route(route_name, position_route) {
 
 		// =================== Add your code below ========================
 		// you should send a payload containing the latitude, longitude, and color to the "<topic>/route" topic
+		publishJSON('route', JSON.parse(msg));
 
 		// ================================================================
 	}, 1000);
